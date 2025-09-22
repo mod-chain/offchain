@@ -1,0 +1,11 @@
+[package]
+name = "telemetry-module"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+axum = { version = "0.8.4", features = ["macros"] }
+serde = { version = "1.0.226", features = ["derive"] }
+subxt = { version = "0.44.0", features = ["tokio"] }
+tokio = { version = "1.47.1", features = ["full"] }
