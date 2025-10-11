@@ -42,68 +42,84 @@ async fn get_module(
     Ok(axum::Json(module))
 }
 
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub enum CryptoScheme {
+    #[serde(rename = "ecdsa")]
+    ECDSA,
+    #[serde(rename = "ed25519")]
+    Ed25519,
+    #[default]
+    #[serde(rename = "sr25519")]
+    Sr25519,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerSignature {
+    scheme: Option<CryptoScheme>,
     address: String,
     signature: String,
 }
 
-impl From<&serde_json::Value> for ServerSignature {
-    fn from(value: &serde_json::Value) -> Self {
-        let address = value.get("address");
-        let signature = value.get("signature");
-        Self {
-            address: match address {
-                Some(value) => value.as_str().unwrap().to_string(),
-                None => String::new(),
-            },
-            signature: match signature {
-                Some(value) => value.as_str().unwrap().to_string(),
-                None => String::new(),
-            },
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsageVerificationRequest {
+    pub data: String,
+    pub server: ServerSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsageVerificationResponse {
+    pub valid: bool,
+    pub scheme: CryptoScheme,
+    pub address: Option<String>,
+}
+
+// impl From<&serde_json::Value> for ServerSignature {
+//     fn from(value: &serde_json::Value) -> Self {
+//         let scheme = value.get("scheme");
+//         let address = value.get("address");
+//         let signature = value.get("signature");
+//         Self {
+//             scheme: match scheme {
+//                 Some(value) => CryptoScheme::serialize(value.as_str().unwrap().to_string()),
+//                 None => CryptoScheme::default(),
+//             },
+//             address: match address {
+//                 Some(value) => value.as_str().unwrap().to_string(),
+//                 None => String::new(),
+//             },
+//             signature: match signature {
+//                 Some(value) => value.as_str().unwrap().to_string(),
+//                 None => String::new(),
+//             },
+//         }
+//     }
+// }
+
+fn verify_server_signature(server: ServerSignature, data: String) -> Result<bool, ApiError> {
+    let bytes = hex::decode(server.signature[2..].as_bytes())?;
+    let address =
+        AccountId32::from_ss58check(&server.address).expect("Failed to decode SS58 Address");
+
+    let sig =
+        schnorrkel::Signature::from_bytes(&bytes).expect("Schnorrkel Failed to decode Signature");
+    let public = schnorrkel::PublicKey::from_bytes(&*address.as_ref())
+        .expect("Schnorrkel Failed to decode Public Key");
+    let valid = public
+        .verify_simple(b"substrate", data.as_bytes(), &sig)
+        .is_ok();
+
+    Ok(valid)
 }
 
 async fn verify_signature(
     State(_state): State<AppState>,
     _: Version,
-    Json(payload): Json<serde_json::Value>,
+    Json(payload): Json<UsageVerificationRequest>,
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
-    let data = payload
-        .get("data")
-        .ok_or(anyhow::anyhow!("Missing `data` field"))?;
-    let server = payload
-        .get("server")
-        .ok_or(anyhow::anyhow!("Missing `server` field"))?;
+    let data = payload.data;
+    let server = payload.server;
 
-    let address = server.get("address").and_then(|v| v.as_str());
-    let signature = server.get("signature").and_then(|v| v.as_str());
-
-    if address.is_none() {
-        return Err(anyhow::anyhow!("Missing `address` field in `server`").into());
-    }
-    if signature.is_none() {
-        return Err(anyhow::anyhow!("Missing `signature` field in `server`").into());
-    }
-
-    let server_sig: ServerSignature = server.into();
-
-    log::info!("{:?}", server_sig.signature.as_bytes());
-    log::info!("{:?}", server_sig.signature[2..].as_bytes());
-    let bytes = hex::decode(server_sig.signature[2..].as_bytes())?;
-    let address =
-        AccountId32::from_ss58check(&server_sig.address).expect("Failed to decode SS58 Address");
-
-    let message = data.as_str().expect("`data` should be a string").as_bytes();
-
-    let sig = schnorrkel::Signature::from_bytes(&bytes).expect("Schnorrkel Failed to decode Signature");
-    let public = schnorrkel::PublicKey::from_bytes(&*address.as_ref()).expect("Schnorrkel Failed to decode Public Key");
-    let valid = public.verify_simple(b"substrate", message, &sig).is_ok();
-
-    log::info!("{:?}", message);
-    log::info!("{:?}", sig);
-    log::info!("{:?}", public);
+    let valid = verify_server_signature(server, data)?;
 
     Ok(Json(serde_json::json!({ "valid": valid })))
 }
