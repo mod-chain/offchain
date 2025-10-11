@@ -49,6 +49,10 @@ use iced::{
     Theme,
 };
 
+mod ext;
+pub use ext::*;
+mod chain;
+pub use chain::*;
 mod screens;
 use screens::*;
 
@@ -79,6 +83,7 @@ pub enum Message {
     Previous,
     ThemeSelected(Theme),
     ScreenSelected(Screen),
+    StateUpdated(AppState),
 }
 
 impl Layout {
@@ -99,6 +104,9 @@ impl Layout {
             }
             Message::ScreenSelected(screen) => {
                 self.screen = screen;
+            }
+            Message::StateUpdated(state) => {
+                self.state = state;
             }
         }
     }
