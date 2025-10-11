@@ -108,6 +108,8 @@ fn verify_server_signature(server: ServerSignature, data: String) -> Result<bool
         .verify_simple(b"substrate", data.as_bytes(), &sig)
         .is_ok();
 
+    let data_json: serde_json::Value = serde_json::from_str(&data)?;
+
     Ok(valid)
 }
 
@@ -118,7 +120,7 @@ async fn verify_signature(
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
     let data = payload.data;
     let server = payload.server;
-
+    
     let valid = verify_server_signature(server, data)?;
 
     Ok(Json(serde_json::json!({ "valid": valid })))

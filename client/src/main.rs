@@ -13,19 +13,44 @@
 //     println!("bytes length: {}", signature.0.len());
 //     println!("{:?}", public_key.0);
 
+use std::fmt::Display;
+
+use iced::Background;
 //     assert!(sr25519::verify(&signature, message, &public_key));
 // }
 use iced::border;
 use iced::keyboard;
 use iced::mouse;
 use iced::widget::{
-    button, canvas, center, checkbox, column, container, horizontal_space,
-    pick_list, row, scrollable, text,
+    button,
+    canvas,
+    center,
+    checkbox,
+    column,
+    container,
+    horizontal_space,
+    vertical_space,
+    pick_list,
+    row,
+    scrollable,
+    text,
 };
 use iced::{
-    color, Center, Element, Fill, Font, Length, Point, Rectangle, Renderer,
-    Subscription, Theme,
+    color,
+    Center,
+    Element,
+    Fill,
+    Font,
+    Length,
+    Point,
+    Rectangle,
+    Renderer,
+    Subscription,
+    Theme,
 };
+
+mod screens;
+use screens::*;
 
 pub fn main() -> iced::Result {
     iced::application(Layout::title, Layout::update, Layout::view)
@@ -36,22 +61,29 @@ pub fn main() -> iced::Result {
 
 #[derive(Default, Debug)]
 struct Layout {
+    screen: Screen,
+    state: AppState,
     example: Example,
-    explain: bool,
+    debug: bool,
     theme: Theme,
 }
 
+#[derive(Default, Debug, Clone)]
+struct AppState {
+    modules: Vec<String>,
+}
+
 #[derive(Debug, Clone)]
-enum Message {
+pub enum Message {
     Next,
     Previous,
-    ExplainToggled(bool),
     ThemeSelected(Theme),
+    ScreenSelected(Screen),
 }
 
 impl Layout {
     fn title(&self) -> String {
-        format!("{} - Layout - Iced", self.example.title)
+        format!("{} - chain-tool", self.screen)
     }
 
     fn update(&mut self, message: Message) {
@@ -62,11 +94,11 @@ impl Layout {
             Message::Previous => {
                 self.example = self.example.previous();
             }
-            Message::ExplainToggled(explain) => {
-                self.explain = explain;
-            }
             Message::ThemeSelected(theme) => {
                 self.theme = theme;
+            }
+            Message::ScreenSelected(screen) => {
+                self.screen = screen;
             }
         }
     }
@@ -74,61 +106,120 @@ impl Layout {
     fn subscription(&self) -> Subscription<Message> {
         use keyboard::key;
 
-        keyboard::on_key_release(|key, _modifiers| match key {
-            keyboard::Key::Named(key::Named::ArrowLeft) => {
-                Some(Message::Previous)
+        keyboard::on_key_release(|key, _modifiers| {
+            match key {
+                keyboard::Key::Named(key::Named::ArrowLeft) => { Some(Message::Previous) }
+                keyboard::Key::Named(key::Named::ArrowRight) => Some(Message::Next),
+                _ => None,
             }
-            keyboard::Key::Named(key::Named::ArrowRight) => Some(Message::Next),
-            _ => None,
         })
     }
 
-    fn view(&self) -> Element<Message> {
-        let header = row![
-            text(self.example.title).size(20).font(Font::MONOSPACE),
-            horizontal_space(),
-            checkbox("Explain", self.explain)
-                .on_toggle(Message::ExplainToggled),
-            pick_list(Theme::ALL, Some(&self.theme), Message::ThemeSelected),
-        ]
-        .spacing(20)
-        .align_y(Center);
+    fn view(&self) -> Element<'_, Message> {
+        // let header = row![
+        //     text(self.example.title).size(20).font(Font::MONOSPACE),
+        //     horizontal_space(),
+        //     checkbox("Explain", self.explain)
+        //         .on_toggle(Message::ExplainToggled),
+        //     pick_list(Theme::ALL, Some(&self.theme), Message::ThemeSelected),
+        // ]
+        // .spacing(20)
+        // .align_y(Center);
 
-        let example = center(if self.explain {
-            self.example.view().explain(color!(0x0000ff))
-        } else {
-            self.example.view()
-        })
-        .style(|theme| {
+        // let controls = row([
+        //     (!self.example.is_first()).then_some(
+        //         button("← Previous")
+        //             .padding([5, 10])
+        //             .on_press(Message::Previous)
+        //             .into(),
+        //     ),
+        //     Some(horizontal_space().into()),
+        //     (!self.example.is_last()).then_some(
+        //         button("Next →")
+        //             .padding([5, 10])
+        //             .on_press(Message::Next)
+        //             .into(),
+        //     ),
+        // ]
+        // .into_iter()
+        // .flatten());
+
+        // column![header, example, controls]
+        //     .spacing(10)
+        //     .padding(20)
+        //     .into()
+        let header = container(
+            row![
+                text(self.title()).size(16).font(Font::MONOSPACE),
+                horizontal_space(),
+                pick_list(Theme::ALL, Some(&self.theme), Message::ThemeSelected)
+            ]
+                .padding(10)
+                .spacing(8)
+                .align_y(Center)
+        ).style(|theme: &Theme| {
             let palette = theme.extended_palette();
 
-            container::Style::default()
-                .border(border::color(palette.background.strong.color).width(4))
-        })
-        .padding(4);
+            container::Style
+                ::default()
+                .border(border::color(palette.background.strong.color).width(1))
+        });
 
-        let controls = row([
-            (!self.example.is_first()).then_some(
-                button("← Previous")
-                    .padding([5, 10])
-                    .on_press(Message::Previous)
-                    .into(),
-            ),
-            Some(horizontal_space().into()),
-            (!self.example.is_last()).then_some(
-                button("Next →")
-                    .padding([5, 10])
-                    .on_press(Message::Next)
-                    .into(),
-            ),
-        ]
-        .into_iter()
-        .flatten());
+        let screens = Screen::ALL;
+        let sidebar_buttons = column(
+            screens.iter().filter_map(|screen| {
+                match screen {
+                    Screen::Settings(_) => None,
+                    _ =>
+                        Some(
+                            button(text(format!("{}", screen)))
+                                .on_press(Message::ScreenSelected(screen.clone()))
+                                .padding([5, 10])
+                                .width(Fill)
+                                .into()
+                        ),
+                }
+            })
+        ).spacing(4);
 
-        column![header, example, controls]
-            .spacing(10)
-            .padding(20)
-            .into()
+        let sidebar = container(
+            column![
+                sidebar_buttons,
+                vertical_space(),
+                button(text(format!("{}", Screen::Settings(SettingsScreen {}))))
+                    .on_press(Message::ScreenSelected(Screen::Settings(SettingsScreen {})))
+                    .padding([5, 10])
+                    .width(Fill)
+            ]
+                .spacing(40)
+                .padding(10)
+                .width(200)
+            // .align_x(Center)
+        )
+            .style(container::rounded_box)
+            .center_y(Fill);
+
+        let screen_content = center(
+            if self.debug {
+                self.screen.view().explain(color!(0x0000ff))
+            } else {
+                self.screen.view()
+            }
+        )
+            .style(|theme| {
+                let palette = theme.extended_palette();
+
+                container::Style
+                    ::default()
+                    .border(border::color(palette.background.strong.color).width(4))
+            })
+            .padding(4);
+
+        let content = container(
+            column![screen_content].spacing(40).align_x(Center).width(Fill)
+        ).padding(10);
+
+        column![header, row![sidebar, content]].into()
     }
 
     fn theme(&self) -> Theme {
@@ -175,29 +266,24 @@ impl Example {
     }
 
     fn previous(self) -> Self {
-        let Some(index) =
-            Self::LIST.iter().position(|&example| example == self)
-        else {
+        let Some(index) = Self::LIST.iter().position(|&example| example == self) else {
             return self;
         };
 
-        Self::LIST
-            .get(index.saturating_sub(1))
+        Self::LIST.get(index.saturating_sub(1)).copied().unwrap_or(self)
+    }
+
+    fn next(self) -> Self {
+        let Some(index) = Self::LIST.iter().position(|&example| example == self) else {
+            return self;
+        };
+
+        Self::LIST.get(index + 1)
             .copied()
             .unwrap_or(self)
     }
 
-    fn next(self) -> Self {
-        let Some(index) =
-            Self::LIST.iter().position(|&example| example == self)
-        else {
-            return self;
-        };
-
-        Self::LIST.get(index + 1).copied().unwrap_or(self)
-    }
-
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'static, Message> {
         (self.view)()
     }
 }
@@ -220,10 +306,10 @@ fn column_<'a>() -> Element<'a, Message> {
         square(50),
         square(50),
         "The amount of space between",
-        "elements can be configured!",
+        "elements can be configured!"
     ]
-    .spacing(40)
-    .into()
+        .spacing(40)
+        .into()
 }
 
 fn row_<'a>() -> Element<'a, Message> {
@@ -232,10 +318,10 @@ fn row_<'a>() -> Element<'a, Message> {
         square(50),
         square(50),
         square(50),
-        "but lays out widgets horizontally!",
+        "but lays out widgets horizontally!"
     ]
-    .spacing(40)
-    .into()
+        .spacing(40)
+        .into()
 }
 
 fn space<'a>() -> Element<'a, Message> {
@@ -244,21 +330,13 @@ fn space<'a>() -> Element<'a, Message> {
 
 fn application<'a>() -> Element<'a, Message> {
     let header = container(
-        row![
-            square(40),
-            horizontal_space(),
-            "Header!",
-            horizontal_space(),
-            square(40),
-        ]
-        .padding(10)
-        .align_y(Center),
-    )
-    .style(|theme| {
+        row![square(40), horizontal_space(), "Header!", horizontal_space(), square(40)]
+            .padding(10)
+            .align_y(Center)
+    ).style(|theme| {
         let palette = theme.extended_palette();
 
-        container::Style::default()
-            .border(border::color(palette.background.strong.color).width(1))
+        container::Style::default().border(border::color(palette.background.strong.color).width(1))
     });
 
     let sidebar = container(
@@ -266,10 +344,10 @@ fn application<'a>() -> Element<'a, Message> {
             .spacing(40)
             .padding(10)
             .width(200)
-            .align_x(Center),
+            .align_x(Center)
     )
-    .style(container::rounded_box)
-    .center_y(Fill);
+        .style(container::rounded_box)
+        .center_y(Fill);
 
     let content = container(
         scrollable(
@@ -281,13 +359,11 @@ fn application<'a>() -> Element<'a, Message> {
                     .wrap(),
                 "The end"
             ]
-            .spacing(40)
-            .align_x(Center)
-            .width(Fill),
-        )
-        .height(Fill),
-    )
-    .padding(10);
+                .spacing(40)
+                .align_x(Center)
+                .width(Fill)
+        ).height(Fill)
+    ).padding(10);
 
     column![header, row![sidebar, content]].into()
 }
@@ -304,17 +380,13 @@ fn square<'a>(size: impl Into<Length> + Copy) -> Element<'a, Message> {
             renderer: &Renderer,
             theme: &Theme,
             bounds: Rectangle,
-            _cursor: mouse::Cursor,
+            _cursor: mouse::Cursor
         ) -> Vec<canvas::Geometry> {
             let mut frame = canvas::Frame::new(renderer, bounds.size());
 
             let palette = theme.extended_palette();
 
-            frame.fill_rectangle(
-                Point::ORIGIN,
-                bounds.size(),
-                palette.background.strong.color,
-            );
+            frame.fill_rectangle(Point::ORIGIN, bounds.size(), palette.background.strong.color);
 
             vec![frame.into_geometry()]
         }
