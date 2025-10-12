@@ -5,7 +5,7 @@ use iced::{ Length, border };
 use iced::widget::{ button, center, column, container, row, scrollable, text, text_input };
 use iced::{ Element, Subscription, Task, Theme };
 use crate::{ AppState, ChainConfig, Message, Module };
-use super::{ScreenView, ScreenId};
+use super::{ ScreenView, ScreenId };
 use anyhow::Result;
 use subxt::OnlineClient;
 
@@ -26,9 +26,9 @@ pub struct ModuleDataReceived {
 }
 
 impl ScreenId for ModulesScreen {
-  fn id(&self) -> &'static str {
-    "modules"
-  }
+    fn id(&self) -> &'static str {
+        "modules"
+    }
 }
 
 impl ScreenView for ModulesScreen {
@@ -38,7 +38,7 @@ impl ScreenView for ModulesScreen {
         let module_editor = self.module_editor(state);
 
         column![module_header, row![modules_list, module_editor].align_y(Top).spacing(8.0)]
-            .spacing(16.0)
+            .spacing(4.0)
             .height(Fill)
             .into()
     }
@@ -81,23 +81,30 @@ impl ModulesScreen {
     }
 
     fn module_header(&self, state: &AppState) -> Element<'_, Message> {
-        let new_button = button(text("Clear/New").size(11.0)).on_press_maybe(match
-            self.selected_module.id
-        {
-            Some(_) =>
-                Some(Message::ScreenSelected(
-                    crate::screens::Screen::Modules(ModulesScreen {
-                        selected_module: Module::new(),
-                    })
-                )),
-            None => None,
-        });
+        let new_button = container(
+            button(text("Clear/New").size(11.0).center())
+                .on_press_maybe(match self.selected_module.id {
+                    Some(_) =>
+                        Some(
+                            Message::ScreenSelected(
+                                crate::screens::Screen::Modules(ModulesScreen {
+                                    selected_module: Module::new(),
+                                })
+                            )
+                        ),
+                    None => None,
+                })
+                .width(200)
+        ).padding(8.0);
         let module_title = match self.selected_module.id {
             Some(_) => self.selected_module.name.to_string(),
             None => String::from("New Module"),
         };
 
-        row![new_button, text(module_title).size(20.0)].spacing(8.0).align_y(Center).padding(4.0).into()
+        row![new_button, text(module_title).size(20.0)]
+            .spacing(8.0)
+            .align_y(Center)
+            .into()
     }
 
     fn modules_list(&self, state: &AppState) -> Element<'_, Message> {
@@ -133,7 +140,6 @@ impl ModulesScreen {
                                     ::default()
                                     .with_background(palette.background.weak.color)
                             })
-                            .padding([5, 10])
                             .width(Length::Fixed(200.0))
                     );
                 }
