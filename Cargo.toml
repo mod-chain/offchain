@@ -1,5 +1,5 @@
 [workspace]
-members = ["client", "telemetry-module"]
+members = ["chain-tool", "telemetry-module"]
 resolver = "2"
 
 [workspace.dependencies]
