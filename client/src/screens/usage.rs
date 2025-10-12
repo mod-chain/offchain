@@ -1,13 +1,13 @@
 use iced::widget::{center, text};
 use iced::Element;
-use crate::Message;
+use crate::{AppState, Message};
 use super::ScreenView;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UsageScreen {}
 
 impl ScreenView for UsageScreen {
-    fn view(&self) -> Element<'_, Message> {
+    fn view(&self, state: &AppState) -> Element<'_, Message> {
         center(text("Hello from UsageScreen").size(20)).into()
     }
 }

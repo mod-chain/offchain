@@ -1,9 +1,9 @@
 use super::{ ModulesScreen, WeightsScreen, UsageScreen, SettingsScreen };
-use crate::Message;
+use crate::{ AppState, Message };
 use iced::Element;
 
 pub trait ScreenView {
-    fn view(&self) -> Element<'_, Message>;
+    fn view(&self, state: &AppState) -> Element<'_, Message>;
 }
 
 #[derive(Debug, Clone)]
@@ -16,7 +16,7 @@ pub enum Screen {
 
 impl Default for Screen {
     fn default() -> Self {
-        Self::Modules(ModulesScreen {})
+        Self::Modules(ModulesScreen::default())
     }
 }
 
@@ -39,12 +39,12 @@ impl Screen {
         Self::Settings(SettingsScreen {}),
     ];
 
-    pub fn view<'a>(&self) -> Element<'_, Message> {
+    pub fn view<'a>(&self, state: AppState) -> Element<'_, Message> {
         match self {
-            Screen::Modules(screen) => screen.view(),
-            Screen::Weights(screen) => screen.view(),
-            Screen::Usage(screen) => screen.view(),
-            Screen::Settings(screen) => screen.view(),
+            Screen::Modules(screen) => screen.view(&state),
+            Screen::Weights(screen) => screen.view(&state),
+            Screen::Usage(screen) => screen.view(&state),
+            Screen::Settings(screen) => screen.view(&state),
         }
     }
 }

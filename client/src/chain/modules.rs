@@ -5,7 +5,7 @@ use subxt::{ utils::AccountId32, OnlineClient };
 use anyhow::Result;
 use sp_arithmetic::Percent;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModuleName(Vec<u8>);
 
 impl std::fmt::Display for ModuleName {
@@ -14,7 +14,7 @@ impl std::fmt::Display for ModuleName {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModuleTier {
     Official,
     Approved,
@@ -37,7 +37,7 @@ impl From<chain::runtime_types::pallet_modules::module::module::ModuleTier> for 
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Module {
     pub owner: AccountIdOf,
     pub id: u64,
