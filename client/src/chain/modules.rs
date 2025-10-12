@@ -40,7 +40,7 @@ impl From<chain::runtime_types::pallet_modules::module::module::ModuleTier> for 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Module {
     pub owner: AccountIdOf,
-    pub id: u64,
+    pub id: Option<u64>,
     pub name: ModuleName,
     pub data: StorageReference,
     pub url: URLReference,
@@ -55,7 +55,7 @@ impl From<chain::runtime_types::pallet_modules::module::module::Module> for Modu
     fn from(value: chain::runtime_types::pallet_modules::module::module::Module) -> Self {
         Self {
             owner: value.owner.to_string(),
-            id: value.id,
+            id: Some(value.id),
             name: ModuleName(value.name.0),
             data: match value.data {
                 Some(d) => Some(d.0),
@@ -74,7 +74,28 @@ impl From<chain::runtime_types::pallet_modules::module::module::Module> for Modu
     }
 }
 
+impl Default for Module {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Module {
+    pub fn new() -> Self {
+        Self {
+            owner: String::new(),
+            id: None,
+            name: ModuleName(Vec::new()),
+            data: None,
+            url: None,
+            collateral: 0,
+            take: Percent::zero(),
+            tier: ModuleTier::Unapproved,
+            created_at: 0,
+            last_updated: 0,
+        }
+    }
+
     pub async fn iter(api: &OnlineClient<ChainConfig>) -> Result<Vec<Module>> {
         let mut modules = Vec::<Module>::new();
         let storage_query = chain::storage().modules().modules_iter();

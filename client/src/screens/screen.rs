@@ -1,6 +1,10 @@
 use super::{ ModulesScreen, WeightsScreen, UsageScreen, SettingsScreen };
-use crate::{ AppState, Message };
+use crate::{ AppState, Message, Module };
 use iced::Element;
+
+pub trait ScreenId {
+  fn id(&self) -> &'static str;
+}
 
 pub trait ScreenView {
     fn view(&self, state: &AppState) -> Element<'_, Message>;
@@ -32,12 +36,14 @@ impl std::fmt::Display for Screen {
 }
 
 impl Screen {
-    pub const ALL: &'static [Self] = &[
-        Self::Modules(ModulesScreen {}),
-        Self::Weights(WeightsScreen {}),
-        Self::Usage(UsageScreen {}),
-        Self::Settings(SettingsScreen {}),
-    ];
+    pub fn all() -> Vec<Self> {
+        vec![
+            Self::Modules(ModulesScreen::default()),
+            Self::Weights(WeightsScreen {}),
+            Self::Usage(UsageScreen {}),
+            Self::Settings(SettingsScreen {}),
+        ]
+    }
 
     pub fn view<'a>(&self, state: AppState) -> Element<'_, Message> {
         match self {
@@ -47,4 +53,15 @@ impl Screen {
             Screen::Settings(screen) => screen.view(&state),
         }
     }
+}
+
+impl ScreenId for Screen {
+  fn id(&self) -> &'static str {
+    match self {
+      Screen::Modules(screen) => screen.id(),
+      Screen::Weights(screen) => screen.id(),
+      Screen::Usage(screen) => screen.id(),
+      Screen::Settings(screen) => screen.id(),
+    }
+  }
 }

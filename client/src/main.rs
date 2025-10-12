@@ -16,6 +16,7 @@
 use std::fmt::Display;
 
 use iced::Background;
+use iced::alignment::Vertical::Top;
 //     assert!(sr25519::verify(&signature, message, &public_key));
 // }
 use iced::border;
@@ -62,10 +63,7 @@ pub fn main() -> iced::Result {
         .subscription(Layout::subscription)
         .theme(Layout::theme)
         // .run()
-        .run_with(|| (
-            Layout::default(),
-            Task::done(Message::Modules(ModulesMessage::RefreshData)),
-        ))
+        .run_with(|| (Layout::default(), Task::done(Message::Modules(ModulesMessage::RefreshData))))
 }
 
 #[derive(Default, Debug)]
@@ -120,14 +118,13 @@ impl Layout {
     fn subscription(&self) -> Subscription<Message> {
         use keyboard::key;
 
-        println!("From the subscription function");
-
         Subscription::batch([
             ModulesScreen::subscription(&self.state),
             keyboard::on_key_release(|key, _modifiers| {
                 match key {
                     // TODO: Hotkeys to refresh data/info
-                    // keyboard::Key::Named(key::Named::F5) => Some(Message::Modules())
+                    keyboard::Key::Named(key::Named::F5) =>
+                        Some(Message::Modules(ModulesMessage::RefreshData)),
                     // keyboard::Key::Named(key::Named::ArrowLeft) => { Some(Message::Previous) }
                     // keyboard::Key::Named(key::Named::ArrowRight) => Some(Message::Next),
                     _ => None,
@@ -154,7 +151,7 @@ impl Layout {
                 .border(border::color(palette.background.strong.color).width(1))
         });
 
-        let screens = Screen::ALL;
+        let screens = Screen::all();
         let sidebar_buttons = column(
             screens.iter().filter_map(|screen| {
                 match screen {
@@ -164,6 +161,13 @@ impl Layout {
                             button(text(format!("{}", screen)))
                                 .on_press(Message::ScreenSelected(screen.clone()))
                                 .padding([5, 10])
+                                .style(
+                                    if self.screen.id() == screen.id() {
+                                        button::primary
+                                    } else {
+                                        button::secondary
+                                    }
+                                )
                                 .width(Fill)
                                 .into()
                         ),
@@ -177,6 +181,13 @@ impl Layout {
                 vertical_space(),
                 button(text(format!("{}", Screen::Settings(SettingsScreen {}))))
                     .on_press(Message::ScreenSelected(Screen::Settings(SettingsScreen {})))
+                    .style(
+                        if self.screen.id() == "settings" {
+                            button::primary
+                        } else {
+                            button::secondary
+                        }
+                    )
                     .padding([5, 10])
                     .width(Fill)
             ]
@@ -185,7 +196,7 @@ impl Layout {
                 .width(200)
             // .align_x(Center)
         )
-            .style(container::rounded_box)
+            .style(container::bordered_box)
             .center_y(Fill);
 
         let screen_content = center(
@@ -198,21 +209,17 @@ impl Layout {
             .style(|theme| {
                 let palette = theme.extended_palette();
 
-                container::Style
-                    ::default()
-                    .border(border::color(palette.background.strong.color).width(4))
+                container::Style::default()
+                // .border(border::color(palette.background.strong.color).width(4))
             })
             .padding(4);
 
-        let content = container(
-            column![screen_content].spacing(40).align_x(Center).width(Fill)
-        ).padding(10);
+        let content = container(screen_content).padding(10);
 
-        column![header, row![sidebar, content]].into()
+        column![header, row![sidebar, content].align_y(Top)].into()
     }
 
     fn theme(&self) -> Theme {
         self.theme.clone()
     }
 }
-
