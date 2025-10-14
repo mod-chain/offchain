@@ -136,6 +136,7 @@ impl Wallet {
 
     pub fn load_wallets(specified_path: Option<String>) -> Option<Vec<Wallet>> {
         let wallet_filepath = Wallet::get_wallet_filepath(specified_path);
+        println!("Loading wallets from file at {}", wallet_filepath.to_str().unwrap());
         match std::fs::read_to_string(&wallet_filepath) {
             Ok(json_data) =>
                 match serde_json::from_str::<Vec<Wallet>>(&json_data) {
