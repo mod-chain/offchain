@@ -1,0 +1,19 @@
+[package]
+name = "chain-tool"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+clap = { version = "4.5.48", features = ["derive"] }
+hex.workspace = true
+iced = { version = "0.13.1", features = ["auto-detect-theme", "canvas", "wgpu", "tiny-skia", "fira-sans", "tokio", "lazy", "advanced", "image", "debug"] }
+sp-arithmetic = "28.0.0"
+subxt.workspace = true
+subxt-signer = { workspace = true, features = ["polkadot-js-compat", "serde", "serde_json"] }
+serde.workspace = true
+serde_json.workspace = true
+schnorrkel.workspace = true
+directories = "6.0.0"
+tokio = { workspace = true, features = ["full"] }
+uuid = { version = "1.18.1", features = ["arbitrary", "v4", "serde", "js"] }
