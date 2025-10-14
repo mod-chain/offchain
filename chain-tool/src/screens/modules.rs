@@ -1,10 +1,9 @@
 use iced::Alignment::Center;
 use iced::Length::Fill;
 use iced::alignment::Vertical::Top;
-use iced::{ Font, Length, border };
+use iced::{Length, border };
 use iced::widget::{
     button,
-    center,
     column,
     container,
     pick_list,
@@ -92,7 +91,7 @@ impl ModulesScreen {
         Subscription::none()
     }
 
-    fn module_header(&self, state: &AppState) -> Element<'_, Message> {
+    fn module_header(&self, _state: &AppState) -> Element<'_, Message> {
         let new_button = container(
             button(text("Clear/New").size(11.0).center())
                 .on_press_maybe(match self.selected_module.id {

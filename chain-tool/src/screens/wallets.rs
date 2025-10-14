@@ -1,4 +1,4 @@
-use iced::widget::{ button, center, column, container, row, scrollable, text, text_input };
+use iced::widget::{ button, column, container, row, scrollable, text, text_input };
 use iced::{
     Element,
     Task,
@@ -76,7 +76,7 @@ impl WalletsScreen {
         }
     }
 
-    fn wallet_header(&self, state: &AppState) -> Element<'_, Message> {
+    fn wallet_header(&self, _state: &AppState) -> Element<'_, Message> {
         let new_button = container(
             button(text("Clear/New").size(11.0).center())
                 .on_press_maybe(match self.selected_wallet.id {

@@ -1,60 +1,23 @@
-// use subxt_signer::sr25519;
-
-// fn main() {
-//     let keypair = sr25519::dev::alice();
-//     let message = b"123";
-
-//     let signature = keypair.sign(message);
-//     let public_key = keypair.public_key();
-
-//     println!("{:?}", message);
-//     println!("{:?}", signature.0);
-//     println!("0x{:?}", hex::encode(signature.0));
-//     println!("bytes length: {}", signature.0.len());
-//     println!("{:?}", public_key.0);
-
-use std::fmt::Display;
-
-use iced::Background;
 use iced::alignment::Vertical::Top;
-//     assert!(sr25519::verify(&signature, message, &public_key));
-// }
 use iced::border;
 use iced::keyboard;
-use iced::mouse;
 use iced::widget::{
     button,
-    canvas,
     center,
-    checkbox,
     column,
     container,
     horizontal_space,
     vertical_space,
     pick_list,
     row,
-    scrollable,
     text,
 };
-use iced::{
-    color,
-    Center,
-    Element,
-    Fill,
-    Font,
-    Length,
-    Point,
-    Rectangle,
-    Renderer,
-    Subscription,
-    Theme,
-    Task,
-};
+use iced::{ color, Center, Element, Fill, Font, Subscription, Theme, Task };
 
 mod ext;
-pub use ext::*;
+use ext::*;
 mod chain;
-pub use chain::*;
+use chain::*;
 mod screens;
 use screens::*;
 
@@ -120,7 +83,7 @@ impl Layout {
             Message::Modules(message) => ModulesScreen::update(&self.state, message),
             Message::Wallets(message) => WalletsScreen::update(&self.state, message),
             // TODO: Implement
-            Message::Error(e) => Task::none(),
+            Message::Error(_) => Task::none(),
         }
     }
 
@@ -214,14 +177,7 @@ impl Layout {
             } else {
                 self.screen.view(self.state.clone())
             }
-        )
-            .style(|theme| {
-                let palette = theme.extended_palette();
-
-                container::Style::default()
-                // .border(border::color(palette.background.strong.color).width(4))
-            })
-            .padding(4);
+        ).padding(4);
 
         let content = container(screen_content).padding(10);
 

@@ -1,7 +1,7 @@
 use crate::{ AccountIdOf, BalanceOf, Block, StorageReference, URLReference };
 use super::{ chain, ChainConfig };
 use serde::{ Serialize, Deserialize };
-use subxt::{ utils::AccountId32, OnlineClient };
+use subxt::{ OnlineClient };
 use anyhow::Result;
 use sp_arithmetic::Percent;
 

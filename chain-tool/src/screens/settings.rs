@@ -7,7 +7,7 @@ use super::{ ScreenView, ScreenId };
 pub struct SettingsScreen {}
 
 impl ScreenView for SettingsScreen {
-    fn view(&self, state: &AppState) -> Element<'_, Message> {
+    fn view(&self, _state: &AppState) -> Element<'_, Message> {
         center(text("Hello from SettingsScreen").size(20)).into()
     }
 }
