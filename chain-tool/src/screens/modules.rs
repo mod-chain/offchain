@@ -179,126 +179,137 @@ impl ModulesScreen {
         let modules_state = state.modules.clone();
 
         if let Some(_modules) = modules_state {
-            container(
-                column([
-                    row![
-                        text("Owner").width(120.0),
-                        text_input("Owner", &self.selected_module.owner)
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("ID").width(120.0),
-                        text_input("ID", match self.selected_module.id {
-                            Some(v) => Box::leak(format!("{}", v).into_boxed_str()),
-                            None => "Not Registered",
-                        })
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Name").width(120.0),
-                        text_input("Name", &self.selected_module.name.to_string())
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Data").width(120.0),
-                        text_input("Data", &format!("{:?}", &self.selected_module.data))
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("URL").width(120.0),
-                        text_input("URL", &format!("{:?}", &self.selected_module.url))
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Collateral").width(120.0),
-                        text_input("Collateral", &format!("{:?}", &self.selected_module.collateral))
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Take").width(120.0),
-                        // text_input("Take", &format!("{:?}", &self.selected_module.take))
-                        container(
-                            slider(0u8..=100u8, self.selected_module.take.deconstruct(), |value| {
-                                Message::ScreenSelected(
-                                    crate::screens::Screen::Modules(ModulesScreen {
-                                        selected_module: Module {
-                                            take: Percent::from_percent(value),
-                                            ..self.selected_module.clone()
-                                        },
-                                    })
-                                )
+            scrollable(
+                container(
+                    column([
+                        row![
+                            text("Owner").width(120.0),
+                            text_input("Owner", &self.selected_module.owner)
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("ID").width(120.0),
+                            text_input("ID", match self.selected_module.id {
+                                Some(v) => Box::leak(format!("{}", v).into_boxed_str()),
+                                None => "Not Registered",
                             })
-                        ),
-                        text(format!("{:?}", self.selected_module.take))
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .height(32)
-                        .into(),
-                    row![
-                        text("Tier").width(120.0),
-                        // text_input("Tier", &format!("{:?}", &self.selected_module.tier))
-                        pick_list(
-                            ModuleTier::all(),
-                            Some(self.selected_module.tier.clone()),
-                            |value| {
-                                Message::ScreenSelected(
-                                    crate::screens::Screen::Modules(ModulesScreen {
-                                        selected_module: Module {
-                                            tier: value,
-                                            ..self.selected_module.clone()
-                                        },
-                                    })
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Name").width(120.0),
+                            text_input("Name", &self.selected_module.name.to_string())
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Data").width(120.0),
+                            text_input("Data", &format!("{:?}", &self.selected_module.data))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("URL").width(120.0),
+                            text_input("URL", &format!("{:?}", &self.selected_module.url))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Collateral").width(120.0),
+                            text_input(
+                                "Collateral",
+                                &format!("{:?}", &self.selected_module.collateral)
+                            )
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Take").width(120.0),
+                            // text_input("Take", &format!("{:?}", &self.selected_module.take))
+                            container(
+                                slider(
+                                    0u8..=100u8,
+                                    self.selected_module.take.deconstruct(),
+                                    |value| {
+                                        Message::ScreenSelected(
+                                            crate::screens::Screen::Modules(ModulesScreen {
+                                                selected_module: Module {
+                                                    take: Percent::from_percent(value),
+                                                    ..self.selected_module.clone()
+                                                },
+                                            })
+                                        )
+                                    }
                                 )
-                            }
-                        ).width(Fill)
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Created At").width(120.0),
-                        text_input("Created At", &format!("{}", &self.selected_module.created_at))
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                    row![
-                        text("Last Updated").width(120.0),
-                        text_input(
-                            "Last Updated",
-                            &format!("{}", &self.selected_module.last_updated)
-                        )
-                    ]
-                        .align_y(Center)
-                        .spacing(4.0)
-                        .into(),
-                ])
-            )
-                .style(|theme: &Theme| {
-                    let palette = theme.extended_palette();
+                            ),
+                            text(format!("{:?}", self.selected_module.take))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .height(32)
+                            .into(),
+                        row![
+                            text("Tier").width(120.0),
+                            // text_input("Tier", &format!("{:?}", &self.selected_module.tier))
+                            pick_list(
+                                ModuleTier::all(),
+                                Some(self.selected_module.tier.clone()),
+                                |value| {
+                                    Message::ScreenSelected(
+                                        crate::screens::Screen::Modules(ModulesScreen {
+                                            selected_module: Module {
+                                                tier: value,
+                                                ..self.selected_module.clone()
+                                            },
+                                        })
+                                    )
+                                }
+                            ).width(Fill)
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Created At").width(120.0),
+                            text_input(
+                                "Created At",
+                                &format!("{}", &self.selected_module.created_at)
+                            )
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Last Updated").width(120.0),
+                            text_input(
+                                "Last Updated",
+                                &format!("{}", &self.selected_module.last_updated)
+                            )
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                    ]).padding([4.0, 8.0])
+                )
+                    .style(|theme: &Theme| {
+                        let palette = theme.extended_palette();
 
-                    container::Style
-                        ::default()
-                        .border(
-                            border::color(palette.background.strong.color).width(1).rounded(8.0)
-                        )
-                })
-                .max_height(400.0)
-                .padding(8.0)
-                .into()
+                        container::Style
+                            ::default()
+                            .border(
+                                border::color(palette.background.strong.color).width(1).rounded(8.0)
+                            )
+                    })
+                    .padding([0.0, 8.0])
+                    .max_height(400.0)
+            ).into()
         } else {
             column![text("Loading modules from chain...")].into()
         }
