@@ -1,5 +1,5 @@
-use super::{ ModulesScreen, WeightsScreen, UsageScreen, SettingsScreen };
-use crate::{ AppState, Message, Module };
+use super::{ ModulesScreen, WeightsScreen, UsageScreen, WalletsScreen, SettingsScreen };
+use crate::{ AppState, Message };
 use iced::Element;
 
 pub trait ScreenId {
@@ -15,6 +15,7 @@ pub enum Screen {
     Modules(ModulesScreen),
     Weights(WeightsScreen),
     Usage(UsageScreen),
+    Wallets(WalletsScreen),
     Settings(SettingsScreen),
 }
 
@@ -30,6 +31,7 @@ impl std::fmt::Display for Screen {
             Screen::Modules(_) => write!(f, "Modules"),
             Screen::Weights(_) => write!(f, "Weights"),
             Screen::Usage(_) => write!(f, "Usage"),
+            Screen::Wallets(_) => write!(f, "Wallets"),
             Screen::Settings(_) => write!(f, "Settings"),
         }
     }
@@ -41,6 +43,7 @@ impl Screen {
             Self::Modules(ModulesScreen::default()),
             Self::Weights(WeightsScreen {}),
             Self::Usage(UsageScreen {}),
+            Self::Wallets(WalletsScreen::default()),
             Self::Settings(SettingsScreen {}),
         ]
     }
@@ -50,6 +53,7 @@ impl Screen {
             Screen::Modules(screen) => screen.view(&state),
             Screen::Weights(screen) => screen.view(&state),
             Screen::Usage(screen) => screen.view(&state),
+            Screen::Wallets(screen) => screen.view(&state),
             Screen::Settings(screen) => screen.view(&state),
         }
     }
@@ -61,6 +65,7 @@ impl ScreenId for Screen {
       Screen::Modules(screen) => screen.id(),
       Screen::Weights(screen) => screen.id(),
       Screen::Usage(screen) => screen.id(),
+      Screen::Wallets(screen) => screen.id(),
       Screen::Settings(screen) => screen.id(),
     }
   }

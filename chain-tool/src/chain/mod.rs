@@ -6,3 +6,5 @@ pub type ChainConfig = SubstrateConfig;
 
 mod modules;
 pub use modules::*;
+mod wallets;
+pub use wallets::*;

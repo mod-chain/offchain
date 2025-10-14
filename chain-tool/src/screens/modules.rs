@@ -1,10 +1,22 @@
 use iced::Alignment::Center;
 use iced::Length::Fill;
 use iced::alignment::Vertical::Top;
-use iced::{ Length, border };
-use iced::widget::{ button, center, column, container, row, scrollable, text, text_input };
+use iced::{ Font, Length, border };
+use iced::widget::{
+    button,
+    center,
+    column,
+    container,
+    pick_list,
+    row,
+    scrollable,
+    slider,
+    text,
+    text_input,
+};
 use iced::{ Element, Subscription, Task, Theme };
-use crate::{ AppState, ChainConfig, Message, Module };
+use sp_arithmetic::Percent;
+use crate::{ AppState, ChainConfig, Message, Module, ModuleTier };
 use super::{ ScreenView, ScreenId };
 use anyhow::Result;
 use subxt::OnlineClient;
@@ -46,7 +58,7 @@ impl ScreenView for ModulesScreen {
 
 impl ModulesScreen {
     pub async fn get_modules() -> Result<Vec<Module>> {
-        println!("In get_modules");
+        println!("get_modules");
         let api = OnlineClient::<ChainConfig>::from_url("ws://127.0.0.1:9944").await?;
         let modules = Module::iter(&api).await?;
 
@@ -76,7 +88,7 @@ impl ModulesScreen {
         }
     }
 
-    pub fn subscription(state: &AppState) -> Subscription<Message> {
+    pub fn subscription(_: &AppState) -> Subscription<Message> {
         Subscription::none()
     }
 
@@ -101,63 +113,63 @@ impl ModulesScreen {
             None => String::from("New Module"),
         };
 
-        row![new_button, text(module_title).size(20.0)]
-            .spacing(8.0)
-            .align_y(Center)
-            .into()
+        row![new_button, text(module_title).size(20.0)].spacing(8.0).align_y(Center).into()
     }
 
     fn modules_list(&self, state: &AppState) -> Element<'_, Message> {
         let modules_state = state.modules.clone();
 
         if let Some(modules) = modules_state {
+            let mut col = column![];
             if modules.is_empty() {
-                column![text("No Modules in network.")].into()
+                // column![text("No Modules in network.")].into()
+                col = col.push(
+                    button(container(text("No Modules in Network")))
+                        .style(button::secondary)
+                        .width(Length::Fixed(200.0))
+                );
             } else {
-                let mut col = column![];
                 for m in modules {
                     col = col.push(
                         button(
-                            text(m.name.to_string()).style(|theme: &Theme| {
-                                let palette = theme.extended_palette();
-
-                                text::Style {
-                                    color: Some(palette.primary.strong.color),
-                                }
-                            })
+                            container(
+                                row![
+                                    text(m.id.unwrap()).width(40.0),
+                                    text(m.name.to_string())
+                                ].align_y(Center)
+                            )
                         )
                             .on_press(
                                 Message::ScreenSelected(
                                     crate::screens::Screen::Modules(ModulesScreen {
-                                        selected_module: m,
+                                        selected_module: m.clone(),
                                     })
                                 )
                             )
-                            .style(|theme: &Theme, status: button::Status| {
-                                let palette = theme.extended_palette();
-
-                                button::Style
-                                    ::default()
-                                    .with_background(palette.background.weak.color)
-                            })
+                            .style(
+                                if self.selected_module.id == m.id {
+                                    button::primary
+                                } else {
+                                    button::secondary
+                                }
+                            )
                             .width(Length::Fixed(200.0))
                     );
                 }
-                // col.into()
-                container(scrollable(col))
-                    .style(|theme: &Theme| {
-                        let palette = theme.extended_palette();
-
-                        container::Style
-                            ::default()
-                            .border(
-                                border::color(palette.background.strong.color).width(1).rounded(8.0)
-                            )
-                    })
-                    .max_height(400.0)
-                    .padding(8.0)
-                    .into()
             }
+            container(scrollable(col))
+                .style(|theme: &Theme| {
+                    let palette = theme.extended_palette();
+
+                    container::Style
+                        ::default()
+                        .border(
+                            border::color(palette.background.strong.color).width(1).rounded(8.0)
+                        )
+                })
+                .max_height(400.0)
+                .padding(8.0)
+                .into()
         } else {
             column![text("Loading modules from chain...")].into()
         }
@@ -216,14 +228,42 @@ impl ModulesScreen {
                         .into(),
                     row![
                         text("Take").width(120.0),
-                        text_input("Take", &format!("{:?}", &self.selected_module.take))
+                        // text_input("Take", &format!("{:?}", &self.selected_module.take))
+                        container(
+                            slider(0u8..=100u8, self.selected_module.take.deconstruct(), |value| {
+                                Message::ScreenSelected(
+                                    crate::screens::Screen::Modules(ModulesScreen {
+                                        selected_module: Module {
+                                            take: Percent::from_percent(value),
+                                            ..self.selected_module.clone()
+                                        },
+                                    })
+                                )
+                            })
+                        ),
+                        text(format!("{:?}", self.selected_module.take))
                     ]
                         .align_y(Center)
                         .spacing(4.0)
+                        .height(32)
                         .into(),
                     row![
                         text("Tier").width(120.0),
-                        text_input("Tier", &format!("{:?}", &self.selected_module.tier))
+                        // text_input("Tier", &format!("{:?}", &self.selected_module.tier))
+                        pick_list(
+                            ModuleTier::all(),
+                            Some(self.selected_module.tier.clone()),
+                            |value| {
+                                Message::ScreenSelected(
+                                    crate::screens::Screen::Modules(ModulesScreen {
+                                        selected_module: Module {
+                                            tier: value,
+                                            ..self.selected_module.clone()
+                                        },
+                                    })
+                                )
+                            }
+                        ).width(Fill)
                     ]
                         .align_y(Center)
                         .spacing(4.0)

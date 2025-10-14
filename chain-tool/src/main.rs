@@ -63,7 +63,14 @@ pub fn main() -> iced::Result {
         .subscription(Layout::subscription)
         .theme(Layout::theme)
         // .run()
-        .run_with(|| (Layout::default(), Task::done(Message::Modules(ModulesMessage::RefreshData))))
+        .run_with(|| (
+            Layout::default(),
+            Task::batch([
+                Task::done(Message::Modules(ModulesMessage::RefreshData)),
+                Task::done(Message::Wallets(WalletsMessage::RefreshData)),
+            ]),
+            // Task::done(Message::Modules(ModulesMessage::RefreshData))
+        ))
 }
 
 #[derive(Default, Debug)]
@@ -77,6 +84,7 @@ struct Layout {
 #[derive(Default, Debug, Clone)]
 pub struct AppState {
     modules: Option<Vec<Module>>,
+    wallets: Option<Vec<Wallet>>,
 }
 
 #[derive(Debug, Clone)]
@@ -85,6 +93,7 @@ pub enum Message {
     ScreenSelected(Screen),
     StateUpdated(AppState),
     Modules(screens::ModulesMessage),
+    Wallets(screens::WalletsMessage),
     Error(String),
 }
 
@@ -94,7 +103,6 @@ impl Layout {
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
-        println!("In primary update");
         println!("{:?}", message);
         match message {
             Message::ThemeSelected(theme) => {
@@ -110,6 +118,7 @@ impl Layout {
                 Task::none()
             }
             Message::Modules(message) => ModulesScreen::update(&self.state, message),
+            Message::Wallets(message) => WalletsScreen::update(&self.state, message),
             // TODO: Implement
             Message::Error(e) => Task::none(),
         }

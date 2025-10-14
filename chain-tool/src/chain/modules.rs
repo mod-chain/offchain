@@ -20,6 +20,25 @@ pub enum ModuleTier {
     Approved,
     Unapproved,
     Delisted,
+    NotRegistered,
+}
+
+impl ModuleTier {
+    pub fn all() -> Vec<Self> {
+        vec![Self::Official, Self::Approved, Self::Unapproved, Self::Delisted]
+    }
+}
+
+impl std::fmt::Display for ModuleTier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ModuleTier::Official => write!(f, "Official"),
+            ModuleTier::Approved => write!(f, "Approved"),
+            ModuleTier::Unapproved => write!(f, "Unapproved"),
+            ModuleTier::Delisted => write!(f, "Delisted"),
+            ModuleTier::NotRegistered => write!(f, "Not Registered"),
+        }
+    }
 }
 
 impl From<chain::runtime_types::pallet_modules::module::module::ModuleTier> for ModuleTier {
