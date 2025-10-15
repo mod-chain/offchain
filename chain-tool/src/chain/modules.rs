@@ -1,12 +1,21 @@
-use crate::{ AccountIdOf, BalanceOf, Block, StorageReference, URLReference };
+use crate::{
+    AccountIdOf,
+    AppState,
+    BalanceOf,
+    Block,
+    StorageReference,
+    URLReference,
+    chain::chain::transaction_payment::storage::types::storage_version,
+};
 use super::{ chain, ChainConfig };
 use serde::{ Serialize, Deserialize };
 use subxt::{ OnlineClient };
 use anyhow::Result;
 use sp_arithmetic::Percent;
+use subxt_signer::sr25519::Keypair;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ModuleName(Vec<u8>);
+pub struct ModuleName(pub Vec<u8>);
 
 impl std::fmt::Display for ModuleName {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -134,6 +143,73 @@ impl Module {
         match result {
             Some(module) => Ok(module.into()),
             None => Err(anyhow::anyhow!("Module Not Found")),
+        }
+    }
+
+    pub async fn authorized_module(api: &OnlineClient<ChainConfig>) -> Result<u64> {
+        let storage_query = chain::storage().module_payments().authorized_module();
+        let result = api.storage().at_latest().await?.fetch(&storage_query).await?;
+
+        match result {
+            Some(authorized_module) => Ok(authorized_module),
+            // None => Err(anyhow::anyhow!("Authorized Module failed to be queried."))
+            None => Ok(0),
+        }
+    }
+
+    pub async fn register(&self, api: &OnlineClient<ChainConfig>, state: &AppState) -> Result<()> {
+        println!("Register: {:?}", &self);
+        let wallets = state.wallets.clone();
+        if !self.owner.is_empty() {
+            let wallets = wallets.unwrap();
+            let selected_wallet = wallets
+                .iter()
+                .find(|w| w.public_key == self.owner)
+                .unwrap();
+
+            let module_registration_tx = chain
+                ::tx()
+                .modules()
+                .register_module(
+                    chain::runtime_types::bounded_collections::bounded_vec::BoundedVec(
+                        self.name.0.clone()
+                    ),
+                    match &self.data {
+                        Some(data) =>
+                            Some(
+                                chain::runtime_types::bounded_collections::bounded_vec::BoundedVec(
+                                    data.clone()
+                                )
+                            ),
+                        None => None,
+                    },
+                    match &self.url {
+                        Some(url) =>
+                            Some(
+                                chain::runtime_types::bounded_collections::bounded_vec::BoundedVec(
+                                    url.clone()
+                                )
+                            ),
+                        None => None,
+                    },
+                    // Some((self.take.deconstruct() as u32).into())
+                    None
+                );
+
+            let from = Keypair::try_from(selected_wallet.clone()).unwrap();
+            let events = api
+                .tx()
+                .sign_and_submit_then_watch_default(&module_registration_tx, &from).await?
+                .wait_for_finalized_success().await?;
+
+            let register_event = events.find_first::<chain::modules::events::ModuleRegistered>()?;
+            if let Some(event) = register_event {
+                println!("Register Success: {event:?}");
+            }
+
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Register function expects owner to be set"))
         }
     }
 }

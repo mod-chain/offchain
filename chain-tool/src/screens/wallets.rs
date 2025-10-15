@@ -78,7 +78,18 @@ impl WalletsScreen {
 
     fn wallet_header(&self, _state: &AppState) -> Element<'_, Message> {
         let new_button = container(
-            button(text("Clear/New").size(11.0).center())
+            button(
+                text("Clear/New")
+                    .style(|theme: &Theme| {
+                        let palette = theme.extended_palette();
+
+                        text::Style {
+                            color: Some(palette.primary.strong.text),
+                        }
+                    })
+                    .size(11.0)
+                    .center()
+            )
                 .on_press_maybe(match self.selected_wallet.id {
                     Some(_) =>
                         Some(

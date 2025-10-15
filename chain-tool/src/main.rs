@@ -47,6 +47,7 @@ struct Layout {
 #[derive(Default, Debug, Clone)]
 pub struct AppState {
     modules: Option<Vec<Module>>,
+    authorized_module: u64,
     wallets: Option<Vec<Wallet>>,
 }
 
@@ -80,7 +81,8 @@ impl Layout {
                 self.state = state;
                 Task::none()
             }
-            Message::Modules(message) => ModulesScreen::update(&self.state, message),
+            Message::Modules(message) =>
+                ModulesScreen::update(&ModulesScreen::new(), &self.state, message),
             Message::Wallets(message) => WalletsScreen::update(&self.state, message),
             // TODO: Implement
             Message::Error(_) => Task::none(),

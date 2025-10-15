@@ -1,7 +1,7 @@
 use iced::Alignment::Center;
 use iced::Length::Fill;
 use iced::alignment::Vertical::Top;
-use iced::{Length, border };
+use iced::{ Length, border };
 use iced::widget::{
     button,
     column,
@@ -15,6 +15,7 @@ use iced::widget::{
 };
 use iced::{ Element, Subscription, Task, Theme };
 use sp_arithmetic::Percent;
+use crate::chain::ModuleName;
 use crate::{ AppState, ChainConfig, Message, Module, ModuleTier };
 use super::{ ScreenView, ScreenId };
 use anyhow::Result;
@@ -29,11 +30,13 @@ pub struct ModulesScreen {
 pub enum ModulesMessage {
     DataReceived(ModuleDataReceived),
     RefreshData,
+    Register(Module),
 }
 
 #[derive(Debug, Clone)]
 pub struct ModuleDataReceived {
     pub modules: Option<Vec<Module>>,
+    pub authorized_module: u64,
 }
 
 impl ScreenId for ModulesScreen {
@@ -56,33 +59,65 @@ impl ScreenView for ModulesScreen {
 }
 
 impl ModulesScreen {
-    pub async fn get_modules() -> Result<Vec<Module>> {
+    pub fn new() -> Self {
+        Self {
+            selected_module: Module::new(),
+        }
+    }
+    pub async fn refresh_data() -> Result<(Vec<Module>, u64)> {
         println!("get_modules");
         let api = OnlineClient::<ChainConfig>::from_url("ws://127.0.0.1:9944").await?;
         let modules = Module::iter(&api).await?;
+        let authorized_module = Module::authorized_module(&api).await?;
 
-        Ok(modules)
+        Ok((modules, authorized_module))
     }
 
-    pub fn update(state: &AppState, message: ModulesMessage) -> Task<Message> {
+    pub async fn register_module(&self, state: &AppState) -> Result<()> {
+        println!("register_module");
+        let api = OnlineClient::<ChainConfig>::from_url("ws://127.0.0.1:9944").await?;
+
+        self.selected_module.register(&api, state).await
+    }
+
+    pub fn update(&self, state: &AppState, message: ModulesMessage) -> Task<Message> {
         match message {
             ModulesMessage::DataReceived(data_received) => {
                 let mut new_state = state.clone();
                 new_state.modules = data_received.modules.or(new_state.modules);
+                new_state.authorized_module = data_received.authorized_module;
                 Task::done(Message::StateUpdated(new_state))
             }
             ModulesMessage::RefreshData => {
-                Task::perform(ModulesScreen::get_modules(), |value| {
+                Task::perform(ModulesScreen::refresh_data(), |value| {
                     match value {
-                        Ok(modules) =>
+                        Ok((modules, authorized_module)) =>
                             Message::Modules(
                                 ModulesMessage::DataReceived(ModuleDataReceived {
                                     modules: Some(modules),
+                                    authorized_module,
                                 })
                             ),
                         Err(e) => Message::Error(e.to_string()),
                     }
                 })
+            }
+            ModulesMessage::Register(module) => {
+                let current_state = state.clone();
+                Task::perform(
+                    async move {
+                        let api = OnlineClient::<ChainConfig>::from_url(
+                            "ws://127.0.0.1:9944"
+                        ).await?;
+                        module.register(&api, &current_state).await
+                    },
+                    |value| {
+                        match value {
+                            Ok(_) => { Message::Modules(ModulesMessage::RefreshData) }
+                            Err(e) => Message::Error(e.to_string()),
+                        }
+                    }
+                )
             }
         }
     }
@@ -91,9 +126,20 @@ impl ModulesScreen {
         Subscription::none()
     }
 
-    fn module_header(&self, _state: &AppState) -> Element<'_, Message> {
+    fn module_header(&self, state: &AppState) -> Element<'_, Message> {
         let new_button = container(
-            button(text("Clear/New").size(11.0).center())
+            button(
+                text("Clear/New")
+                    .style(|theme: &Theme| {
+                        let palette = theme.extended_palette();
+
+                        text::Style {
+                            color: Some(palette.primary.strong.text),
+                        }
+                    })
+                    .size(11.0)
+                    .center()
+            )
                 .on_press_maybe(match self.selected_module.id {
                     Some(_) =>
                         Some(
@@ -111,8 +157,27 @@ impl ModulesScreen {
             Some(_) => self.selected_module.name.to_string(),
             None => String::from("New Module"),
         };
+        let authorized_module_flag = match self.selected_module.id {
+            Some(id) => {
+                if id == state.authorized_module {
+                    text("Authorized Module").style(|theme: &Theme| {
+                        let palette = theme.extended_palette();
 
-        row![new_button, text(module_title).size(20.0)].spacing(8.0).align_y(Center).into()
+                        text::Style {
+                            color: Some(palette.secondary.base.text),
+                        }
+                    }).size(11.0)
+                } else {
+                    text("")
+                }
+            }
+            None => text(""),
+        };
+
+        row![new_button, text(module_title).size(20.0), authorized_module_flag]
+            .spacing(8.0)
+            .align_y(Center)
+            .into()
     }
 
     fn modules_list(&self, state: &AppState) -> Element<'_, Message> {
@@ -178,8 +243,9 @@ impl ModulesScreen {
         let modules_state = state.modules.clone();
 
         if let Some(_modules) = modules_state {
-            scrollable(
-                container(
+            let module_inputs = match &self.selected_module.id {
+                Some(_v) => {
+                    // Edit mode - show read-only fields for existing modules
                     column([
                         row![
                             text("Owner").width(120.0),
@@ -190,10 +256,7 @@ impl ModulesScreen {
                             .into(),
                         row![
                             text("ID").width(120.0),
-                            text_input("ID", match self.selected_module.id {
-                                Some(v) => Box::leak(format!("{}", v).into_boxed_str()),
-                                None => "Not Registered",
-                            })
+                            text_input("ID", &self.selected_module.id.unwrap().to_string())
                         ]
                             .align_y(Center)
                             .spacing(4.0)
@@ -231,7 +294,6 @@ impl ModulesScreen {
                             .into(),
                         row![
                             text("Take").width(120.0),
-                            // text_input("Take", &format!("{:?}", &self.selected_module.take))
                             container(
                                 slider(
                                     0u8..=100u8,
@@ -256,7 +318,6 @@ impl ModulesScreen {
                             .into(),
                         row![
                             text("Tier").width(120.0),
-                            // text_input("Tier", &format!("{:?}", &self.selected_module.tier))
                             pick_list(
                                 ModuleTier::all(),
                                 Some(self.selected_module.tier.clone()),
@@ -296,7 +357,148 @@ impl ModulesScreen {
                             .spacing(4.0)
                             .into(),
                     ]).padding([4.0, 8.0])
-                )
+                }
+                None => {
+                    // Create mode - show editable fields for new modules
+                    column([
+                        row![
+                            text("Owner").width(120.0),
+                            match &state.wallets {
+                                Some(wallets) =>
+                                    container(
+                                        pick_list(
+                                            wallets
+                                                .iter()
+                                                .map(|w| w.public_key.clone())
+                                                .collect::<Vec<String>>(),
+                                            Some(&self.selected_module.owner),
+                                            |value| {
+                                                Message::ScreenSelected(
+                                                    crate::screens::Screen::Modules(ModulesScreen {
+                                                        selected_module: Module {
+                                                            owner: value,
+                                                            ..self.selected_module.clone()
+                                                        },
+                                                    })
+                                                )
+                                            }
+                                        )
+                                    ),
+                                None => container(text("Loading wallets from config...")),
+                            }
+                            // text_input("Owner", &self.selected_module.owner)
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Name").width(120.0),
+                            text_input("Name", &self.selected_module.name.to_string()).on_input(
+                                |value| {
+                                    Message::ScreenSelected(
+                                        crate::screens::Screen::Modules(ModulesScreen {
+                                            selected_module: Module {
+                                                name: ModuleName(value.as_bytes().to_vec()),
+                                                ..self.selected_module.clone()
+                                            },
+                                        })
+                                    )
+                                }
+                            )
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Data").width(120.0),
+                            text_input("Data", &format!("{:?}", &self.selected_module.data))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("URL").width(120.0),
+                            text_input("URL", &format!("{:?}", &self.selected_module.url))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Collateral").width(120.0),
+                            text_input(
+                                "Collateral",
+                                &format!("{:?}", &self.selected_module.collateral)
+                            )
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            text("Take").width(120.0),
+                            container(
+                                slider(
+                                    0u8..=100u8,
+                                    self.selected_module.take.deconstruct(),
+                                    |value| {
+                                        Message::ScreenSelected(
+                                            crate::screens::Screen::Modules(ModulesScreen {
+                                                selected_module: Module {
+                                                    take: Percent::from_percent(value),
+                                                    ..self.selected_module.clone()
+                                                },
+                                            })
+                                        )
+                                    }
+                                )
+                            ),
+                            text(format!("{:?}", self.selected_module.take))
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .height(32)
+                            .into(),
+                        row![
+                            text("Tier").width(120.0),
+                            pick_list(
+                                ModuleTier::all(),
+                                Some(self.selected_module.tier.clone()),
+                                |value| {
+                                    Message::ScreenSelected(
+                                        crate::screens::Screen::Modules(ModulesScreen {
+                                            selected_module: Module {
+                                                tier: value,
+                                                ..self.selected_module.clone()
+                                            },
+                                        })
+                                    )
+                                }
+                            ).width(Fill)
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                        row![
+                            button(text("Submit")).on_press_maybe(match
+                                !self.selected_module.name.to_string().is_empty()
+                            {
+                                true =>
+                                    Some(
+                                        Message::Modules(
+                                            ModulesMessage::Register(self.selected_module.clone())
+                                        )
+                                    ),
+                                false => None,
+                            })
+                        ]
+                            .align_y(Center)
+                            .spacing(4.0)
+                            .into(),
+                    ]).padding([4.0, 8.0])
+                }
+            };
+
+            scrollable(
+                container(module_inputs)
                     .style(|theme: &Theme| {
                         let palette = theme.extended_palette();
 
