@@ -61,6 +61,13 @@ pub struct ServerSignature {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserSignature {
+    scheme: Option<CryptoScheme>,
+    address: String,
+    signature: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsageVerificationRequest {
     pub data: String,
     pub server: ServerSignature,
@@ -71,6 +78,16 @@ pub struct UsageVerificationResponse {
     pub valid: bool,
     pub scheme: CryptoScheme,
     pub address: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsageReport {
+    /// Address of the user of the service
+    pub caller: String, 
+    /// ID of the Module (service)
+    pub module: u64,
+    pub server_signature: ServerSignature,
+    pub user_signature: UserSignature,
 }
 
 // impl From<&serde_json::Value> for ServerSignature {
