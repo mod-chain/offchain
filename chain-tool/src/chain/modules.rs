@@ -5,7 +5,6 @@ use crate::{
     Block,
     StorageReference,
     URLReference,
-    chain::chain::transaction_payment::storage::types::storage_version,
 };
 use super::{ chain, ChainConfig };
 use serde::{ Serialize, Deserialize };
