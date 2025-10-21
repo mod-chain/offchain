@@ -1211,9 +1211,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.48"
+version = "4.5.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2134bb3ea021b78629caa971416385309e0131b351b25e01dc16fb54e1b5fae"
+checksum = "0c2cfd7bf8a6017ddaa4e32ffe7403d547790db06bd171c1c53926faab501623"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1221,9 +1221,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.48"
+version = "4.5.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2ba64afa3c0a6df7fa517765e31314e983f51dda798ffba27b988194fb65dc9"
+checksum = "0a4c05b9e80c5ccd3a7ef080ad7b6ba7d6fc00a985b8b157197075677c82c7a0"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1233,9 +1233,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.47"
+version = "4.5.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbfd7eae0b0f1a6e63d4b13c9c478de77c2eb546fba158ad50b4203dc24b9f9c"
+checksum = "2a0b5487afeab2deb2ff4e03a807ad1a03ac532ff5a2cee5d86884440c7f7671"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -1823,6 +1823,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.106",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -2425,6 +2426,25 @@ dependencies = [
  "scale-encode",
  "scale-info",
  "scale-type-resolver",
+ "sp-crypto-hashing",
+ "thiserror 2.0.16",
+]
+
+[[package]]
+name = "frame-decode"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "641e3739fa708a278d35b008a05244008c221240abc3e1c27138466c13e999ed"
+dependencies = [
+ "frame-metadata",
+ "parity-scale-codec",
+ "scale-decode",
+ "scale-encode",
+ "scale-info",
+ "scale-info-legacy",
+ "scale-type-resolver",
+ "scale-value",
+ "serde_yaml",
  "sp-crypto-hashing",
  "thiserror 2.0.16",
 ]
@@ -5483,6 +5503,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "scale-info-legacy"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe4c781c622e7c19fa3dd5442cad73da9946a370facc07d9d30743ac7fecd110"
+dependencies = [
+ "derive_more 1.0.0",
+ "hashbrown 0.15.5",
+ "scale-type-resolver",
+ "serde",
+ "smallstr",
+ "smallvec",
+ "yap",
+]
+
+[[package]]
 name = "scale-type-resolver"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5507,9 +5542,9 @@ dependencies = [
 
 [[package]]
 name = "scale-value"
-version = "0.18.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ca8b26b451ecb7fd7b62b259fa28add63d12ec49bbcac0e01fcb4b5ae0c09aa"
+checksum = "884aab179aba344c67ddcd1d7dd8e3f8fee202f2e570d97ec34ec8688442a5b3"
 dependencies = [
  "base58",
  "blake2",
@@ -5794,6 +5829,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_yaml"
+version = "0.9.34+deprecated"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml",
+]
+
+[[package]]
 name = "serdect"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5917,6 +5965,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
  "version_check",
+]
+
+[[package]]
+name = "smallstr"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "862077b1e764f04c251fe82a2ef562fd78d7cadaeb072ca7c2bcaf7217b1ff3b"
+dependencies = [
+ "smallvec",
 ]
 
 [[package]]
@@ -6075,6 +6132,23 @@ dependencies = [
  "smol",
  "smoldot",
  "zeroize",
+]
+
+[[package]]
+name = "snapper"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "frame-decode 0.10.0",
+ "frame-metadata",
+ "hex",
+ "parity-scale-codec",
+ "scale-value",
+ "serde",
+ "serde_json",
+ "subxt",
+ "tokio",
 ]
 
 [[package]]
@@ -6457,7 +6531,7 @@ dependencies = [
  "base58",
  "blake2",
  "derive-where",
- "frame-decode",
+ "frame-decode 0.9.0",
  "frame-metadata",
  "hashbrown 0.14.5",
  "hex",
@@ -6518,7 +6592,7 @@ version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01fb7c0bfafad78dda7084c6a2444444744af3bbf7b2502399198b9b4c20eddf"
 dependencies = [
- "frame-decode",
+ "frame-decode 0.9.0",
  "frame-metadata",
  "hashbrown 0.14.5",
  "parity-scale-codec",
@@ -7289,6 +7363,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "unsafe-libyaml"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
+
+[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7580,6 +7660,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d06bfa36ab3ac2be0dee563380147a5b81ba10dd8885d7fbbc9eb574be67d185"
 dependencies = [
  "bitflags 2.9.4",
+]
+
+[[package]]
+name = "watchdog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "frame-decode 0.10.0",
+ "frame-metadata",
+ "hex",
+ "parity-scale-codec",
+ "scale-value",
+ "serde",
+ "serde_json",
+ "subxt",
+ "tokio",
 ]
 
 [[package]]
