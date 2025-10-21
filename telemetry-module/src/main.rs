@@ -53,6 +53,7 @@ pub enum CryptoScheme {
     Sr25519,
 }
 
+// Module's Signature
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerSignature {
     scheme: Option<CryptoScheme>,
@@ -64,6 +65,9 @@ pub struct ServerSignature {
 pub struct UserSignature {
     scheme: Option<CryptoScheme>,
     address: String,
+    /// If another user/module is paying for this on behalf of another user
+    /// Then the original user's address is placed here.
+    on_behalf_of: Option<String>,
     signature: String,
 }
 
@@ -154,6 +158,13 @@ impl AppState {
         Ok(Self { api })
     }
 }
+
+///
+/// loop every block
+/// - keeping track of blocks on chain
+///     - keeping track of weights of current block to eval available transactions to submit
+/// - keeping track of the payment distribution period
+/// - submitting usage weights once per distribution period
 
 #[tokio::main]
 async fn main() -> Result<()> {
